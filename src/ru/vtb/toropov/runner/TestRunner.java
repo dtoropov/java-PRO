@@ -12,6 +12,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * TestRunner.
@@ -27,12 +28,19 @@ public class TestRunner {
     Method[] methods = c.getDeclaredMethods();
     Method afterSuite = null;
     Method beforeSuite = null;
-    HashMap<Integer, Method> hashMap = new HashMap<>();
+    Integer priotiy;
+    HashMap<Integer, List<Method>> hashMap = new HashMap<>();
     for (Method method : methods) {
       if (method.isAnnotationPresent(Test.class)) {
         if (!Modifier.isStatic(method.getModifiers())) {
           Test test = method.getAnnotation(Test.class);
-          hashMap.put(test.priority(), method);
+          priotiy = test.priority();
+          List<Method> listMethod = hashMap.get(priotiy);
+          if (listMethod == null) {
+            listMethod = new ArrayList<Method>();
+          }
+          listMethod.add(method);
+          hashMap.put(priotiy, listMethod);
         } else {
           throw new RuntimeException("Аннотация Test не может быть применена к static методам");
         }
@@ -64,37 +72,50 @@ public class TestRunner {
       }
     }
 
-    ArrayList<Integer> sortedKeys
+    List<Integer> sortedKeys
         = new ArrayList<Integer>(hashMap.keySet());
 
     Collections.sort(sortedKeys);
 
+    if (beforeSuite != null) {
+      beforeSuite.invoke(null);
+    }
     for (Integer key : sortedKeys) {
-      if (beforeSuite != null) {
-        beforeSuite.invoke(null);
-      }
-      Method method = hashMap.get(key);
-      method.invoke(object);
-      if (afterSuite != null) {
-        afterSuite.invoke(null);
+      List<Method> listMethod = hashMap.get(key);
+      for (Method method : listMethod) {
+        method.invoke(object);
       }
     }
+    if (afterSuite != null) {
+      afterSuite.invoke(null);
+    }
   }
+
   public static void runCsvSource(Exeed exeed)
       throws InvocationTargetException, IllegalAccessException {
     Class classExeed = exeed.getClass();
     Method[] methods = classExeed.getDeclaredMethods();
-    for (Method method:methods)
-    {
+    for (Method method : methods) {
       if (method.isAnnotationPresent(CsvSource.class)) {
         CsvSource csvSource = method.getAnnotation(CsvSource.class);
+        int parameterCount = method.getParameterCount();
         String strCsvSource = csvSource.value();
         String[] arrayString = strCsvSource.split(",");
-        Integer a = Integer.parseInt(arrayString[0].trim());
-        String b = arrayString[1].trim();
-        Integer c = Integer.parseInt(arrayString[2].trim());
-        Boolean d = Boolean.parseBoolean(arrayString[3].trim());
-        method.invoke(exeed, a, b, c,d);
+        if (parameterCount == arrayString.length) {
+          Object[] args = new Object[arrayString.length];
+          Class[] parameterTypes = method.getParameterTypes();
+          for (int i = 0; i < parameterTypes.length; i++) {
+            Object obj;
+            Class<?> parameterType = parameterTypes[i];
+            obj = switch (parameterType.getName()) {
+              case ("int"), ("Integer") -> Integer.parseInt(arrayString[i].trim());
+              case ("boolean"), ("Boolean") -> Boolean.parseBoolean(arrayString[i].trim());
+              default -> parameterType.cast(arrayString[i].trim());
+            };
+            args[i] = obj;
+          }
+          method.invoke(exeed, args);
+        }
       }
     }
   }

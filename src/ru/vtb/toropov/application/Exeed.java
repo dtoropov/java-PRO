@@ -20,12 +20,14 @@ public class Exeed extends Car{
     super(model, yearOfRelease, price);
   }
   @Override
+  @Test(priority = 1)
   public void start()
   {
     System.out.println("Машина " + this.getModel() + " поехала");
   }
 
   @Override
+  @Test(priority = 2)
   public void stop()
   {
     System.out.println("Машина " + this.getModel() + " остановилась");
