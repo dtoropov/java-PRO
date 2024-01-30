@@ -28,47 +28,38 @@ public class TestRunner {
     Method[] methods = c.getDeclaredMethods();
     Method afterSuite = null;
     Method beforeSuite = null;
-    Integer priotiy;
+    Integer priority;
     HashMap<Integer, List<Method>> hashMap = new HashMap<>();
     for (Method method : methods) {
       if (method.isAnnotationPresent(Test.class)) {
         if (!Modifier.isStatic(method.getModifiers())) {
           Test test = method.getAnnotation(Test.class);
-          priotiy = test.priority();
-          List<Method> listMethod = hashMap.get(priotiy);
-          if (listMethod == null) {
-            listMethod = new ArrayList<Method>();
-          }
+          priority = test.priority();
+          List<Method> listMethod = hashMap.getOrDefault(priority, new ArrayList<>());
           listMethod.add(method);
-          hashMap.put(priotiy, listMethod);
+          hashMap.put(priority, listMethod);
         } else {
           throw new RuntimeException("Аннотация Test не может быть применена к static методам");
         }
       }
       if (method.isAnnotationPresent(AfterSuite.class)) {
-        if (Modifier.isStatic(method.getModifiers())) {
-          if (afterSuite == null) {
-            afterSuite = method;
-          } else {
-            throw new RuntimeException("Аннотация AfterSuite должна быть на одном методе");
-          }
-        } else {
-          throw new RuntimeException(
-              "Аннотация AfterSuite не может быть применена к обычным методам");
+        if (!Modifier.isStatic(method.getModifiers())) {
+          throw new RuntimeException("Аннотация AfterSuite должна быть на static методе");
         }
+        if (afterSuite != null) {
+          throw new RuntimeException("Аннотация AfterSuite должна быть на одном методе");
+        }
+        afterSuite = method;
       }
       if (method.isAnnotationPresent(BeforeSuite.class)) {
-        if (Modifier.isStatic(method.getModifiers())) {
-          if (beforeSuite == null) {
-            beforeSuite = method;
-          } else {
-            throw new RuntimeException("Аннотация BeforeSuite должна быть на одном методе");
-          }
-
-        } else {
-          throw new RuntimeException(
-              "Аннотация BeforeSuite не может быть применена к обычным методам");
+        if (!Modifier.isStatic(method.getModifiers())) {
+          throw new RuntimeException("Аннотация BeforeSuite  должна быть на static методе");
         }
+        if (beforeSuite != null) {
+          throw new RuntimeException(
+              "Аннотация BeforeSuite должна быть на одном методе");
+        }
+        beforeSuite = method;
       }
     }
 
@@ -98,16 +89,15 @@ public class TestRunner {
     for (Method method : methods) {
       if (method.isAnnotationPresent(CsvSource.class)) {
         CsvSource csvSource = method.getAnnotation(CsvSource.class);
-        int parameterCount = method.getParameterCount();
         String strCsvSource = csvSource.value();
         String[] arrayString = strCsvSource.split(",");
-        if (parameterCount == arrayString.length) {
+        if (method.getParameterCount() == arrayString.length) {
           Object[] args = new Object[arrayString.length];
           Class[] parameterTypes = method.getParameterTypes();
           for (int i = 0; i < parameterTypes.length; i++) {
             Object obj;
             Class<?> parameterType = parameterTypes[i];
-            obj = switch (parameterType.getName()) {
+            obj = switch (parameterType.getSimpleName()) {
               case ("int"), ("Integer") -> Integer.parseInt(arrayString[i].trim());
               case ("boolean"), ("Boolean") -> Boolean.parseBoolean(arrayString[i].trim());
               default -> parameterType.cast(arrayString[i].trim());
@@ -115,6 +105,9 @@ public class TestRunner {
             args[i] = obj;
           }
           method.invoke(exeed, args);
+        } else {
+          throw new RuntimeException(
+              "Количество параметров не совпадает");
         }
       }
     }

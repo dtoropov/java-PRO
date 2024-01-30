@@ -35,14 +35,14 @@ public class Exeed extends Car{
 
   @Override
   @Test(priority = 1)
-  public void turnOnMusic()
+    public void turnOnMusic()
   {
     System.out.println("Мы включили радио в машине " + this.getModel());
   }
 
   @Override
   @Test(priority = 2)
-  public void turnOffMusic()
+    public void turnOffMusic()
   {
     System.out.println("Мы выключили радио в машине " + this.getModel());
   }
@@ -60,7 +60,7 @@ public class Exeed extends Car{
   }
 
   @CsvSource("10, Java, 20, true")
-  public void testMethod(int a, String b, int c, boolean d)
+  public void testMethod(Integer a, String b, int c, Boolean d)
   {
     System.out.println("Значение a="+a+", значение b=" + b + ", значение c=" + c + " значение d=" +d);
   }
