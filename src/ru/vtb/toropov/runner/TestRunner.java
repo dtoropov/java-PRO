@@ -4,11 +4,12 @@ import ru.vtb.toropov.annotation.AfterSuite;
 import ru.vtb.toropov.annotation.BeforeSuite;
 import ru.vtb.toropov.annotation.CsvSource;
 import ru.vtb.toropov.annotation.Test;
-import ru.vtb.toropov.application.Exeed;
+import ru.vtb.toropov.utils.Exeed;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -110,6 +111,18 @@ public class TestRunner {
               "Количество параметров не совпадает");
         }
       }
+    }
+  }
+
+  public static void runtask1() {
+    try {
+      Exeed exeed = new Exeed("TXL", 2022, new BigDecimal(3000000));
+      Class classExeed = exeed.getClass();
+      TestRunner.runTests(classExeed);
+      TestRunner.runCsvSource(exeed);
+    } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException |
+             InstantiationException e) {
+      System.out.println(e.getMessage());
     }
   }
 }
