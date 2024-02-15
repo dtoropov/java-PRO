@@ -1,9 +1,6 @@
 package ru.vtb.toropov.service;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * TaskExecutor.
@@ -12,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class TaskExecutor extends Thread {
 
-  private LinkedBlockingQueue<Runnable> taskList;
+  private List<Runnable> taskList;
 
   private String name;
 
@@ -22,7 +19,7 @@ public class TaskExecutor extends Thread {
     isRun = run;
   }
 
-  public TaskExecutor(LinkedBlockingQueue<Runnable> taskList, String name) {
+  public TaskExecutor(List<Runnable> taskList, String name) {
     this.taskList = taskList;
     this.name = name;
     this.isRun = true;
@@ -30,16 +27,19 @@ public class TaskExecutor extends Thread {
 
   @Override
   public void run() {
-    try {
-      while (isRun | !taskList.isEmpty()) {
-        System.out.println("Запустился " + name);
-        taskList.take().run();
+    System.out.println("Запустился " + name);
+    while (isRun) {
+      while (taskList.iterator().hasNext()) {
+        Runnable runnable = taskList.iterator().next();
+        synchronized (ExecutorService.lock) {
+          taskList.remove(runnable);
+        }
+        System.out.println(name + " запустил задачу");
+        runnable.run();
       }
-      if (!isRun) {
-        System.out.println("Завершился " + name);
-      }
-    } catch (InterruptedException interruptedException) {
-      throw new RuntimeException(interruptedException);
+    }
+    if (!isRun) {
+      System.out.println("Завершился " + name);
     }
   }
 }
