@@ -1,6 +1,7 @@
 package ru.vtb.toropov.service;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -14,17 +15,15 @@ public class ExecutorService {
   private List<Runnable> queueTread;
   private List<TaskExecutor> listTaskExecutor;
   private boolean isShutdown;
-  public static Object lock = new Object();
-  private final Object lock1 = new Object();
-
+  private final Object lock = new Object();
 
   public ExecutorService(int threadPoolCount) {
     this.threadPoolCount = threadPoolCount;
-    this.listTaskExecutor = new ArrayList<>(this.threadPoolCount);
+    this.listTaskExecutor = new LinkedList<>();
     this.queueTread = new ArrayList<>();
     this.isShutdown = false;
     for (int i = 0; i < threadPoolCount; i++) {
-      TaskExecutor taskExecutor = new TaskExecutor(queueTread, "Поток №" + i);
+      TaskExecutor taskExecutor = new TaskExecutor("Поток №" + i);
       listTaskExecutor.add(taskExecutor);
       taskExecutor.start();
     }
@@ -35,15 +34,43 @@ public class ExecutorService {
       throw new IllegalStateException(
           "Пул потоков приостановил работу. Добавление элементов не возможно");
     }
-    synchronized (lock1) {
+    synchronized (lock) {
       queueTread.add(runnable);
     }
   }
 
   public void shutdown() {
     this.isShutdown = true;
-    for (TaskExecutor taskExecutor : listTaskExecutor) {
-      taskExecutor.setRun(false);
+  }
+
+  private class TaskExecutor extends Thread {
+
+    private String name;
+
+    public TaskExecutor(String name) {
+      this.name = name;
+    }
+
+    @Override
+    public void run() {
+      System.out.println("Запустился " + name);
+      while (!isShutdown) {
+        Runnable runnable = null;
+        synchronized (lock) {
+          while (queueTread.iterator().hasNext()) {
+            runnable = queueTread.iterator().next();
+            queueTread.remove(runnable);
+          }
+        }
+        if (runnable != null) {
+          System.out.println(name + " запустил задачу");
+          runnable.run();
+        }
+
+      }
+      if (isShutdown) {
+        System.out.println("Завершился " + name);
+      }
     }
   }
 }
