@@ -36,6 +36,7 @@ public class ExecutorService {
     }
     synchronized (lock) {
       queueTread.add(runnable);
+      lock.notifyAll();
     }
   }
 
@@ -57,7 +58,13 @@ public class ExecutorService {
       while (!isShutdown) {
         Runnable runnable = null;
         synchronized (lock) {
-          while (queueTread.iterator().hasNext()) {
+          if (!queueTread.iterator().hasNext()) {
+            try {
+              lock.wait();
+            } catch (InterruptedException e) {
+              throw new RuntimeException(e);
+            }
+          } else {
             runnable = queueTread.iterator().next();
             queueTread.remove(runnable);
           }
