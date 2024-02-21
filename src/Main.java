@@ -1,7 +1,6 @@
-import ru.vtb.toropov.application.Exeed;
-import ru.vtb.toropov.runner.TestRunner;
-import java.lang.reflect.InvocationTargetException;
-import java.math.BigDecimal;
+import static java.lang.Thread.sleep;
+
+import ru.vtb.toropov.service.ExecutorService;
 
 /**
  * ${NAME}.
@@ -10,11 +9,18 @@ import java.math.BigDecimal;
  */
 public class Main {
 
-  public static void main(String[] args)
-      throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
-    Exeed exeed =new Exeed("TXL" , 2022, new BigDecimal(3000000));
-    Class classExeed = exeed.getClass();
-    TestRunner.runTests(classExeed);
-    TestRunner.runCsvSource(exeed);
+  public static void main(String[] args) throws InterruptedException {
+    //TestRunner.runtask1();
+    //StreamRunner.runtask2();
+    ExecutorService executorService=new ExecutorService(3);
+    executorService.execute(() -> System.out.println("Первая задача"));
+    executorService.execute(() -> System.out.println("Вторая задача"));
+    executorService.execute(() -> System.out.println("Третья задача"));
+    sleep(3000);
+    executorService.execute(() -> System.out.println("Четвертая задача"));
+    executorService.execute(() -> System.out.println("Пятая задача"));
+    executorService.execute(() -> System.out.println("Шестая задача"));
+    executorService.shutdown();
+    executorService.execute(() -> System.out.println("Седьмая задача"));
   }
 }
